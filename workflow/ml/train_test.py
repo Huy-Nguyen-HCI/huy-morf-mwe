@@ -28,9 +28,12 @@ def select_best_model(X_train, X_val, y_train, y_val):
     best_model = None
     best_val_score = 0
     for (base_estimator, param_grid) in candidate_models:
+        # For each base model, identify the associated best hyperparameter values by using GridSearchCV
         search = GridSearchCV(base_estimator, param_grid, cv = cv_inner, scoring = 'f1')
         result = search.fit(X_train, y_train)
         best_estimator = result.best_estimator_
+
+        # Compare the three base models with their respective best hyperparameter sets on the validation data.
         y_val_pred = best_estimator.predict(X_val)
         val_score = f1_score(y_val, y_val_pred)
         if val_score > best_val_score:
@@ -49,15 +52,24 @@ def build_predictive_model(course_session, label_type):
     df_features = pd.read_csv("all_data.csv")
     X = df_features.drop(columns = "label_value").values
     y = df_features["label_value"].values
+
+    # Split the data into an outer train set and a test set.
     X_train_val, X_test, y_train_val, y_test = train_test_split(
         X, y, stratify = y, random_state = SEED
     )
+
+    # Further split the outer train set into an inner train set and a validation set.
     X_train, X_val, y_train, y_val = train_test_split(
         X_train_val, y_train_val, random_state = SEED
     )
 
+    # Find the best model and best hyperparameters
     best_model = select_best_model(X_train, X_val, y_train, y_val)
+
+    # Fit the winner model on the outer train set.
     best_model.fit(X_train_val, y_train_val)
+
+    # Generate its predictions on the test set, stored in /output/output.csv.
     y_pred = best_model.predict(X_test)
     y_score = best_model.predict_proba(X_test)
     output = pd.DataFrame({'y_true': y_test, 'y_pred': y_pred, 'y_score': y_score[:, 1]})

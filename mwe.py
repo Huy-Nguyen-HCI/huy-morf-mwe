@@ -23,6 +23,5 @@ if __name__ == "__main__":
     extract_data(course_session)
     build_course_dataset(course_session, label_type)
     build_predictive_model(course_session, label_type)
-    
     # build_dummy_output()
 
